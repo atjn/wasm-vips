@@ -431,7 +431,7 @@ EMSCRIPTEN_BINDINGS(my_module) {
                  return major + "." + minor + "." + patch;
              }));
     function("config", optional_override([]() {
-                 return vips::replace_all(VIPS_CONFIG, ", ", "\n");
+                 return std::string(VIPS_CONFIG);
              }));
 
     // Helper for Node.js to shutdown libvips and the runtime of Emscripten

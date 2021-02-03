@@ -122,7 +122,7 @@ VERSION_IMAGEQUANT=2.4.1
 VERSION_CGIF=0.3.0
 VERSION_WEBP=1.2.3
 VERSION_TIFF=4.4.0
-VERSION_VIPS=8.13.0
+VERSION_VIPS=ed2d515
 
 # Remove patch version component
 without_patch() {
@@ -339,10 +339,10 @@ echo "Compiling vips"
 echo "============================================="
 test -f "$TARGET/lib/pkgconfig/vips.pc" || (
   mkdir $DEPS/vips
-  curl -Ls https://github.com/libvips/libvips/releases/download/v$VERSION_VIPS/vips-$VERSION_VIPS.tar.gz | tar xzC $DEPS/vips --strip-components=1
+  #curl -Ls https://github.com/libvips/libvips/releases/download/v$VERSION_VIPS/vips-$VERSION_VIPS.tar.gz | tar xzC $DEPS/vips --strip-components=1
+  curl -Ls https://github.com/kleisauke/libvips/archive/$VERSION_VIPS.tar.gz | tar xzC $DEPS/vips --strip-components=1
   cd $DEPS/vips
   # Emscripten specific patches
-  patch -p1 <$SOURCE_DIR/build/patches/vips-remove-orc.patch
   patch -p1 <$SOURCE_DIR/build/patches/vips-1492-emscripten.patch
   #patch -p1 <$SOURCE_DIR/build/patches/vips-1492-profiler.patch
   # Disable building C++ bindings, man pages, gettext po files, tools, and (fuzz-)tests
@@ -350,7 +350,7 @@ test -f "$TARGET/lib/pkgconfig/vips.pc" || (
   meson setup _build --prefix=$TARGET --cross-file=$MESON_CROSS --default-library=static --buildtype=release \
     -Ddeprecated=false -Dintrospection=false -Dauto_features=disabled -Dcgif=enabled -Dexif=enabled \
     -Dimagequant=enabled -Djpeg=enabled -Dlcms=enabled -Dspng=enabled -Dtiff=enabled -Dwebp=enabled \
-    -Dnsgif=true -Dppm=true -Danalyze=true -Dradiance=true
+    -Dnsgif=true -Dppm=true -Danalyze=true -Dradiance=true -Davx2=false ${DISABLE_SIMD:+-Dsse41=false}
   ninja -C _build install
 )
 

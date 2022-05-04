@@ -4,6 +4,7 @@ import assert from 'assert';
 import Benchmark from 'benchmark';
 
 import Vips from '../../lib/node-es6/vips.mjs';
+import photon from '@silvia-odwyer/photon-node';
 import { tmpdir } from 'os';
 import { inputJpg, inputPng, inputWebP, getPath } from './images.js';
 
@@ -372,6 +373,28 @@ const pngSuite = new Benchmark.Suite('png').add('wasm-vips-buffer-file', {
     const buffer = im.pngsaveBuffer({...defaultPngSaveOptions, compression: 9});
     assert.notStrictEqual(null, buffer);
     im.delete();
+    deferred.resolve();
+  }
+}).add('photon-buffer-buffer-base64', {
+  defer: true,
+  fn: function (deferred) {
+    const im = photon.PhotonImage.new_from_byteslice(inputPngBuffer);
+
+    // Photon breaks aspect ratio during resize, so specify 540 as height instead
+    const resized = photon.resize(im, width, /*height*/540, photon.SamplingFilter.Lanczos3);
+
+    // FIXME: Use get_bytes() once PR https://github.com/silvia-odwyer/photon/pull/121 is released
+    // FIXME: zlib compression?
+    // FIXME: png row filter(s)?
+    // const buffer = resized.get_bytes();
+    const buffer = resized.get_base64().replace(/^data:image\/\w+;base64,/, '');
+    assert.notStrictEqual(null, buffer);
+    im.free();
+    resized.free();
+    /*fs.writeFile('output.png', buffer, { encoding: 'base64' }, err => {
+      assert.strictEqual(null, err);
+      deferred.resolve();
+    });*/
     deferred.resolve();
   }
 }).on('cycle', function (event) {

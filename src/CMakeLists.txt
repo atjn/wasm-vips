@@ -96,6 +96,22 @@ if ("web" IN_LIST ENVIRONMENT)
     list(APPEND TARGETS ${PROJECT_NAME}-web ${PROJECT_NAME}-web-es6)
 endif()
 
+if ("cf" IN_LIST ENVIRONMENT)
+    add_executable(${PROJECT_NAME}-cf $<TARGET_OBJECTS:${PROJECT_NAME}>)
+
+    set_target_properties(${PROJECT_NAME}-cf
+            PROPERTIES
+                 RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+            )
+
+    target_link_libraries(${PROJECT_NAME}-cf
+            PRIVATE
+                ${VIPS_STATIC_LDFLAGS}
+            )
+
+    list(APPEND TARGETS ${PROJECT_NAME}-cf)
+endif()
+
 # Handy for debugging
 # --threadprofiler \
 # -sSAFE_HEAP \
@@ -166,5 +182,21 @@ if ("web" IN_LIST ENVIRONMENT)
             APPEND_STRING PROPERTY
             # Note: we don't apply the CORS workaround since module scripts don't support `importScripts()`.
             LINK_FLAGS " ${WEB_LINK_FLAGS} -sEXPORT_ES6"
+    )
+endif()
+
+if ("cf" IN_LIST ENVIRONMENT)
+    # Cloudflare workers:
+    # - disallows dynamic code execution;
+    # - limits memory to 128 MB;
+    # - doesn't support `import.meta.url` (ES6 Module relative import feature);
+    # - doesn't support node:worker_threads, nor the Web Workers API;
+    # The last point is a deal-breaker; wasm-vips cannot operate without it.
+    set(CF_LINK_FLAGS "-sENVIRONMENT=web,worker -sPTHREAD_POOL_SIZE=1 -sEXPORT_ES6 -sUSE_ES6_IMPORT_META=0 -sDYNAMIC_EXECUTION=0 -sINITIAL_MEMORY=64MB")
+
+    set_property(
+            TARGET ${PROJECT_NAME}-cf
+            APPEND_STRING PROPERTY
+            LINK_FLAGS " ${CF_LINK_FLAGS}"
     )
 endif()
